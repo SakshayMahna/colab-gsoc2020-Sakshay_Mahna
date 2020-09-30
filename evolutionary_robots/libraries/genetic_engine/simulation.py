@@ -9,8 +9,9 @@ simulation, making it deterministic as well.
 """
 
 import threading
+from math_engine import line, point, algorithms
 
-class Simulation(threading.Thread):
+class Simulation(threading.Thread, object):
 	"""
 	Simulation class. The various exercises can
 	subclass this class to create their own environments
@@ -18,6 +19,12 @@ class Simulation(threading.Thread):
 	...
 	Parameters
 	----------
+	boundary: list of Point objects
+		Vertex points of the boundary
+		
+	robot: Robot class object
+		The robot in the environment
+	
 	delta_time(optional): float
 		The time with which the simulation proceeds
 	
@@ -26,11 +33,17 @@ class Simulation(threading.Thread):
 	delta_time: float
 		The time with which the simulation proceeds
 		
-	bodies: list of Body object
-		The list of bodies in our simulated world
+	current_time: float
+		The current time of the simulation
 		
-	number_of_bodies: integer
-		Keeps a count of the number of bodies
+	boundary_points: list of Point objects
+		The list of vertices of boundary
+		
+	boundary_edges: list of Line objects
+		The list of edges of the boundary
+		
+	robot: Robot object
+		The robot used in the simulation
 	
 	Methods
 	-------
@@ -39,17 +52,12 @@ class Simulation(threading.Thread):
 		the exercise
 	
 	collision_checker()
-		Function to check the pairs between which collision has
-		occured. Simply calls each and every object's collision
-		checker function with another object as parameter.
+		Function to check if the robot has crossed the boundary
 	
 	collision_resolver(collision_list)
-		Function to resolve the collisions of the objects
-		
-	add_body(body)
-		Function to append a new body to the world
+		Function to resolve the collisions/illegal move of the robot
 	"""
-	def __init__(self, delta_time=0.0001):
+	def __init__(self, robot, boundary, delta_time=0.0001):
 		"""
 		Initialization function of the class
 		
@@ -72,9 +80,43 @@ class Simulation(threading.Thread):
 		
 		# Initialize variables
 		self.delta_time = delta_time
-		self.bodies = []
-		self.number_of_bodies = 0
+		self.current_time = 0
+		self.boundary_points = boundary
+		self.robot = robot
 		
+	def _define_boundary(self):
+		"""
+		Auxillary function to define the edges of the boundary
+		using the points of boundary
+		...
+		
+		Parameters
+		----------
+		None
+		
+		Returns
+		-------
+		None
+		
+		Raises
+		------
+		None
+		"""
+		boundary = self.boundary_points
+		
+		# Loop over the points and generate the edges
+		self.boundary_edges = []
+		
+		for index in range(len(boundary) - 1):
+			edge = line.Line()
+			edge.line_from_points(boundary[index], boundary[index + 1])
+			self.boundary_edges.append(edge)
+			
+		# Loop over the complete ones
+		edge = line.Line()
+		edge.line_from_points(boundary[0], boundary[-1])
+		self.boundary_edges.append(edge)
+	
 	def run(self):
 		"""
 		This function is supposed to be designed according to
@@ -84,9 +126,8 @@ class Simulation(threading.Thread):
 		
 	def collision_checker(self):
 		"""
-		Function to check the pairs between which collision has
-		occured. Simply calls each and every object's collision
-		checker function with another object as parameter.
+		Function to check whether the robot has collided or
+		made an illegal movee
 		
 		...
 		Parameters
@@ -95,44 +136,35 @@ class Simulation(threading.Thread):
 		
 		Returns
 		-------
-		collision_pairs: list of tuples
-			The tuple pairs which have collided
+		inside: Boolean
+			Whether the robot is in legal space
 			
 		Raises
 		------
 		None
+		
+		Note
+		----
+		The robot is considered a point for now, for simplification
 		"""
 		
-		# Collision set
-		collison_set = set()
+		# Considering the robot a point object
+		# We just need to check if the robot is 
+		# inside the boundary points or not
+		inside = algorithms.point_inside_perimeter(self.robot.position,
+												   self.boundary_edges)
 		
-		# Check each body with another
-		for body_i in range(self.number_of_bodies):
-			for body_j in range(body_i, self.number_of_bodies):
-				collided = self.bodies[body_i].collision_check(
-						   self.bodies[body_j])
-						   
-				if(collided == True):
-					pair_1 = (self.bodies[body_i], self.bodies[body_j])
-					pair_2 = (self.bodies[body_j], self.bodies[body_j])
-					
-					if(pair_1 not in collision_set and\ 
-					   pair_2 not in collision_set):
-					   collision_set.add(pair_1)
-					   
-		collision_list = list(collision_set)
+		return inside
 		
-		return collision_list
-		
-	def collision_resolver(self, collision_list):
+	def collision_resolver(self, inside):
 		"""
-		Function to resolve the collisions of the objects
+		Function to resolve the collisions/illegal move
+		of the robot
 		
 		...
 		Parameters
 		----------
-		collision_list: list of tuples
-			A list containing which objects have collided
+		None
 			
 		Returns
 		-------
@@ -140,58 +172,62 @@ class Simulation(threading.Thread):
 		
 		Raises
 		------
-		AssertionError
-			Atleast one of the two colliding objects should be
-			mobile.
+		None
 			
 		Notes
 		-----
-		For now, the collision resolution is simple, the objects are only
-		placed back at their position
+		For now, the collision resolution is simple, only the
+		last move of the robot is reverted
 		"""
 		
-		for tuples in collision_list:
-			object1 = tuples[0]
-			object2 = tuples[1]
-			
-			# Assertion check
-			assert object1.category == 'mobile' or object2.category == 'mobile', \
-				   "One of the two colliding objects should be mobile"
-				   
-			if(object1.category == 'mobile'):
-				# We will reverse all the actions
-				object1.velocity = -1 * object1.velocity
-				object1.angular_velocity = -1 * object1.angular_velocity
-				object1.move_timestep(self.delta_t)
-				object1.velocity = -1 * object1.velocity
-				object1.angular_velocity = -1 * object1.angular_velocity
-			else:
-				object2.velocity = -1 * object2.velocity
-				object2.angular_velocity = -1 * object2.angular_velocity
-				object2.move_timestep(self.delta_t)
-				object2.velocity = -1 * object2.velocity
-				object2.angular_velocity = -1 * object2.angular_velocity
-				
-	def add_body(self, body):
-		"""
-		Function to append a new body to the world
+		if(inside == False):
+			# Revert to the previous state of the robot
+			self.robot.move(-1 * self.delta_time)	
+	
+	@property
+	def delta_time(self):
+		""" The factor of time which to increment """
+		return self._delta_time
 		
-		...
-		Parameters
-		----------
-		body: Body Object
-			An instance of the Body class
-			
-		Returns
-		-------
-		None
+	@property
+	def current_time(self):
+		""" The current time of the simulation """
+		return self._current_time
 		
-		Raises
-		------
-		None
-		"""
-		self.bodies.append(body)
-		self.number_of_bodies += 1
+	@property
+	def boundary_points(self):
+		""" List of points defining the boundary of the environment """
+		return self._boundary_points
 		
+	@property
+	def boundary_edges(self):
+		""" List of edges defining the boundary of the environment """
+		return self._boundary_edges
 		
+	@property
+	def robot(self):
+		""" The robot used for the simulation """
+		return self._robot
+	
+	@delta_time.setter
+	def delta_time(self, delta):
+		self._delta_time = delta
 		
+	@current_time.setter
+	def current_time(self, current):
+		self._current_time = current
+		
+	@boundary_points.setter
+	def boundary_points(self, points):
+		self._boundary_points = points
+		self._define_boundary()
+		
+	@boundary_edges.setter
+	def boundary_edges(self, edges):
+		self._boundary_edges = edges
+		
+	@robot.setter
+	def robot(self, robot):
+		self._robot = robot
+
+	
