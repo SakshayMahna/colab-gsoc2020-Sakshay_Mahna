@@ -103,6 +103,7 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 		# Fitness calculated according to fitness function
 		# defined by the user
 		fitness = np.sum(individual_fitness) / self.evaluation_steps
+		fitness = fitness * 0.01
 		
 		# Determine the best fitness
 		# And when it occured the first time
@@ -128,11 +129,11 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 			simulation = self.ready_simulation(individual)
 			simulation.start()
 			simulation_threads.append((simulation, individual))
-			simulation.join()
+			#simulation.join()
 			
 		# Join the threads
 		for simulation in simulation_threads:
-			#simulation[0].join()
+			simulation[0].join()
 			self.fitness_vector.append(self.calculate_fitness(simulation[0].fitness_values,
 															  simulation[1]))
 		
@@ -143,8 +144,11 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 		self.generate_statistics()
 		
 	def ready_simulation(self, individual):
-		self.test_network = individual
-		simulation = self.genetic_engine(self.test_network, 
+		#self.test_network = individual
+		ready_individual = self.convert_chromosome(individual)
+		test_network = deepcopy(self.neural_network)
+		test_network.load_parameters_from_vector(ready_individual)
+		simulation = self.genetic_engine(test_network, 
 					 self.evaluation_steps, self.fitness_function)
 		
 		return simulation
@@ -161,7 +165,7 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 	def test_network(self, individual):
 		ready_individual = self.convert_chromosome(individual)
 		self.neural_network.load_parameters_from_vector(ready_individual)
-		self._test_network = self.neural_network
+		self._test_network = deepcopy(self.neural_network)
 		
 	@property
 	def evaluation_steps(self):

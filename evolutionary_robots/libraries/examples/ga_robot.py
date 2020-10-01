@@ -19,15 +19,15 @@ from neural_networks.activation_functions import *
 class ObstacleAvoidance(simulation.Simulation):
 	def __init__(self, neural_network, evaluation_time, fitness_function):
 		roombaIR = robot.Robot()
-		boundary = [point.Point(-300, 300), point.Point(300, 300),
-					point.Point(300, -300), point.Point(-300, -300)]
+		boundary = [point.Point(-10, 10), point.Point(10, 10),
+					point.Point(10, -10), point.Point(-10, -10)]
 					
 		self.evaluation_time = evaluation_time
 		self.neural_network = neural_network
 		self.fitness_function = fitness_function
 		self.fitness_values = []
 					
-		simulation.Simulation.__init__(self, roombaIR, boundary)
+		simulation.Simulation.__init__(self, roombaIR, boundary, 0.01)
 		
 	def run(self):
 		# Steps in a single run
@@ -49,6 +49,7 @@ class ObstacleAvoidance(simulation.Simulation):
 			
 			# Move the robot
 			self.robot.move(self.delta_time)
+			#print(self.robot.position.x, self.robot.position.y, self.robot.orientation)
 			
 			# Collision detection and resolution
 			inside = self.collision_checker()
@@ -103,24 +104,25 @@ def fitness_function(left_motor_speed, right_motor_speed, infrared):
 	# Code the fitness function here
 	V = abs(left_motor_speed) + abs(right_motor_speed)
 	delta_v = abs(right_motor_speed - left_motor_speed)
-	i = np.max(infrared)
+	i = np.min(infrared)
 	
 	fitness = V * (1 - math.sqrt(delta_v)) * (1 - i) * (left_motor_speed + 0.5) * (right_motor_speed + 0.5)
+	
 	return fitness
 	
 ###########################################################################
 
 # Define the Genetic Algorithm
-ga = GeneticAlgorithmEngine(ObstacleAvoidance, neural_network)
+ga = GeneticAlgorithmEngine(ObstacleAvoidance, neural_network, 0.05)
 
 # Set the population size of the algorithm
-ga.population_size = 50
+ga.population_size = 10
 
 # Set the mutation probability
 ga.mutation_probability = 0.01
 
 # Set the number of elites
-ga.number_of_elites = 0
+ga.number_of_elites = 2
 
 # Set the number of generations of the algorithm
 ga.number_of_generations = 1000

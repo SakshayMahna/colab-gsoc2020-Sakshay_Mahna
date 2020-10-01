@@ -158,7 +158,10 @@ class Sensor(object):
 		point1 = robot_pose
 		point2 = self.read(robot_pose, robot_yaw, boundary_edges)
 		
-		distance = algorithms.euclidean_distance(point1, point2) - robot_radius
+		try:
+			distance = algorithms.euclidean_distance(point1, point2) - robot_radius
+		except AttributeError:
+			distance = 0
 		
 		if(distance <= self.sensor_range):
 			return distance

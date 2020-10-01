@@ -269,6 +269,7 @@ class GeneticAlgorithm(object):
 			self.elites = self.population[elite_index]
 			# Delete the elites from current population
 			self.fitness_vector = np.delete(self.fitness_vector, elite_index)
+			self.population = np.delete(self.population, elite_index, axis=0)
 			
 		# Normalize the fitness values to lie between 0 and 1 and sum to 1
 		min_fitness = self.fitness_vector.min()
@@ -329,12 +330,7 @@ class GeneticAlgorithm(object):
 			new_population.append(son); new_population.append(daughter)
 			
 		# The offsprings are the new population now
-		# Along with the elites
 		self.population = np.array(new_population)
-		try:
-			self.population = np.concatenate([self.population, self.elites])
-		except AttributeError:
-			pass
 	
 	# Mutation
 	def mutation(self):
@@ -343,7 +339,7 @@ class GeneticAlgorithm(object):
 		to the probability of mutation
 		"""
 		# Iterate over all the elements
-		for row in range(self.population.shape[0] - self.number_of_elites):
+		for row in range(self.population.shape[0]):
 			for column in range(self.population.shape[1]):
 				# Mutate or not
 				mutate = np.random.choice(2, 1, p = [1 - self.mutation_probability, 
@@ -352,6 +348,12 @@ class GeneticAlgorithm(object):
 				if(mutate[0] == 1):
 					# Mutate
 					self.population[row, column] = np.random.uniform(0, 1)
+		
+		# Add the elites back			
+		try:
+			self.population = np.concatenate([self.population, self.elites])
+		except AttributeError:
+			pass
 				
 	# Plotting Function
 	def plot_fitness(self, filename, show=False):
