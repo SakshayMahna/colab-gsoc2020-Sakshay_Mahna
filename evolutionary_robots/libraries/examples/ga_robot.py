@@ -6,6 +6,7 @@ sys.path.append('./../')
 import numpy as np
 import time
 import math
+import multiprocessing
 
 from genetic_engine import robot, sensor, simulation
 from genetic_engine.math_engine import point, line, algorithms
@@ -25,27 +26,34 @@ class ObstacleAvoidance(simulation.Simulation):
 		self.evaluation_time = evaluation_time
 		self.neural_network = neural_network
 		self.fitness_function = fitness_function
-		self.fitness_values = []
+		self.fitness_values = multiprocessing.Array('f', 
+							  [0 for i in range(int(evaluation_time / 0.01) + 1)])
 					
 		simulation.Simulation.__init__(self, roombaIR, boundary, 0.01)
 		
 	def run(self):
 		# Steps in a single run
+		self.robot.reset_position()
+		self.robot.set_linear_velocity(0)
+		self.robot.set_angular_velocity(0)
+		
+		index = 0
+		
 		while self.current_time < self.evaluation_time:
 			# Increment time
 			self.current_time = self.current_time + self.delta_time
 			
-			# Sense the environment and 
-			# Set the current velocities
+			# Sense the environment
 			infrared = self.robot.sensor_values(self.boundary_edges)
 			output = self.neural_network.forward_propagate({"INFRARED": infrared})["MOTORS"]
-			self.robot.set_linear_velocity(output[0] + output[1])
-			self.robot.set_angular_velocity(output[0] - output[1])
 			
 			# Calculate and store fitness
-			self.fitness_values.append(
-				self.fitness_function(output[0], output[1], infrared)
-			)
+			self.fitness_values[index] = self.fitness_function(output[0], output[1], infrared)
+			index = index + 1
+			
+			# Set the current velocities
+			self.robot.set_linear_velocity(output[0] + output[1])
+			self.robot.set_angular_velocity(output[0] - output[1])
 			
 			# Move the robot
 			self.robot.move(self.delta_time)
@@ -54,8 +62,6 @@ class ObstacleAvoidance(simulation.Simulation):
 			# Collision detection and resolution
 			inside = self.collision_checker()
 			self.collision_resolver(inside)
-			
-		return self.fitness_values
 		
 	@property
 	def fitness_function(self):
@@ -113,10 +119,10 @@ def fitness_function(left_motor_speed, right_motor_speed, infrared):
 ###########################################################################
 
 # Define the Genetic Algorithm
-ga = GeneticAlgorithmEngine(ObstacleAvoidance, neural_network, 0.05)
+ga = GeneticAlgorithmEngine(ObstacleAvoidance, neural_network, 10, 0.01)
 
 # Set the population size of the algorithm
-ga.population_size = 10
+ga.population_size = 50
 
 # Set the mutation probability
 ga.mutation_probability = 0.01

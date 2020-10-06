@@ -72,7 +72,7 @@ class GeneticAlgorithmNN(GeneticAlgorithm):
 		self.neural_network = neural_network
 		
 		# Set the default range
-		self.output_range = [-5, 5]
+		self.output_range = [-0.5, 0.5]
 		
 		# Chromosome length is derived from Neural Network
 		chromosome_length = self.neural_network.number_of_parameters

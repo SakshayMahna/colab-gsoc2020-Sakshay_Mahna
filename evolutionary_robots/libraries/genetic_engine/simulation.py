@@ -8,10 +8,10 @@ simulation, making it deterministic as well.
 
 """
 
-import threading
+import multiprocessing
 from math_engine import line, point, algorithms
 
-class Simulation(threading.Thread, object):
+class Simulation(multiprocessing.Process, object):
 	"""
 	Simulation class. The various exercises can
 	subclass this class to create their own environments
@@ -76,7 +76,7 @@ class Simulation(threading.Thread, object):
 		None
 		"""
 		# Constructor of Thread parent class
-		threading.Thread.__init__(self)
+		multiprocessing.Process.__init__(self)
 		
 		# Initialize variables
 		self.delta_time = delta_time

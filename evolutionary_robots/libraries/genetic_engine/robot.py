@@ -141,6 +141,11 @@ class Robot(object):
 	def set_angular_velocity(self, velocity):
 		""" Function to set the angular velocity of the robot """
 		self.angular_velocity = velocity
+		
+	def reset_position(self):
+		""" Function to reset the robot position """
+		self.position.x = 0
+		self.position.y = 0
 			
 	def move(self, time_step):
 		"""

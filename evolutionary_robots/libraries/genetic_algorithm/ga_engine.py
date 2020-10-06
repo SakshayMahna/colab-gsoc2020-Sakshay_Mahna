@@ -59,7 +59,8 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 		
 	Rest of the methods are the same
 	"""
-	def __init__(self, genetic_engine, neural_network, evaluation_steps=100, population_size=100,
+	def __init__(self, genetic_engine, neural_network, evaluation_steps=100, 
+				 delta_time=0.0001, population_size=100,
 				 number_of_generations=10, mutation_probability=0.01,
 				 number_of_elites=0):
 				 
@@ -80,6 +81,7 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 		None
 		"""
 		self.evaluation_steps = evaluation_steps
+		self.delta_time = delta_time
 		self.genetic_engine = genetic_engine
 		
 		# Initialize the Parent Class
@@ -103,7 +105,7 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 		# Fitness calculated according to fitness function
 		# defined by the user
 		fitness = np.sum(individual_fitness) / self.evaluation_steps
-		fitness = fitness * 0.01
+		fitness = fitness * self.delta_time
 		
 		# Determine the best fitness
 		# And when it occured the first time
@@ -129,13 +131,12 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 			simulation = self.ready_simulation(individual)
 			simulation.start()
 			simulation_threads.append((simulation, individual))
-			#simulation.join()
 			
 		# Join the threads
 		for simulation in simulation_threads:
 			simulation[0].join()
-			self.fitness_vector.append(self.calculate_fitness(simulation[0].fitness_values,
-															  simulation[1]))
+			self.fitness_vector.append(self.calculate_fitness(
+								simulation[0].fitness_values, simulation[1]))
 		
 		# Numpy conversion, to maintain defaut settings
 		self.fitness_vector = np.array(self.fitness_vector, np.float64)
@@ -146,9 +147,9 @@ class GeneticAlgorithmEngine(GeneticAlgorithmNN):
 	def ready_simulation(self, individual):
 		#self.test_network = individual
 		ready_individual = self.convert_chromosome(individual)
-		test_network = deepcopy(self.neural_network)
+		test_network = self.neural_network
 		test_network.load_parameters_from_vector(ready_individual)
-		simulation = self.genetic_engine(test_network, 
+		simulation = self.genetic_engine(deepcopy(test_network), 
 					 self.evaluation_steps, self.fitness_function)
 		
 		return simulation
