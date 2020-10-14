@@ -9,11 +9,11 @@ from neural_networks.activation_functions import *
 LOG_FOLDER = './log'
 
 # Fill Parameters for Genetic Algorithm
-POPULATION_SIZE = 10
-NUMBER_OF_GENERATIONS = 3
+POPULATION_SIZE = 50
+NUMBER_OF_GENERATIONS = 100
 MUTATION_PROBABILITY = 0.01
-EVALUATION_STEPS = 2000
-# NUMBER_OF_ELITES = 4
+EVALUATION_STEPS = 10
+NUMBER_OF_ELITES = 4
 
 def fitness_function(left_motor_speed, right_motor_speed, infrared):
 	# Code the fitness function here

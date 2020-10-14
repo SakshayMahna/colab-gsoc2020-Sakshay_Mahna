@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<launch>
-  <include file="$(find evolutionary_robotics)/launch/obstacle_avoidance_headless.launch">
-  </include>
-</launch>

@@ -3,6 +3,8 @@
 This module implements the Genetic
 Algorithm class adapted to the Robotics
 Academy Template simulation
+
+To be used for testing the parameters of the network
 """
 
 import numpy as np
@@ -23,18 +25,10 @@ class GeneticAlgorithmGazebo(GeneticAlgorithmNN):
 	neural_network: ArtificialNeuralNetwork object
 		An instance of the ArtificialNeuralNetwork object
 		
-	evaluation_steps: integer
-		The number of time steps for which
-		to evaluate the simulation
-		
 	Rest of the parameters are the same
 	
 	Attributes
 	----------
-	evaluation_steps: integer
-		The number of time steps for which
-		to evaluate the simulation
-		
 	test_network: array_like
 		Sets a network whose parameters we don't
 		require to change too much.
@@ -46,20 +40,12 @@ class GeneticAlgorithmGazebo(GeneticAlgorithmNN):
 	
 	Methods
 	-------
-	calculate_fitness(chromosome)
-		Takes the chromosome and generates it's
-		fitness for one time step
-		
-	determine_fitness(individual_fitness)
-		Takes the fitness values for evaluation time steps
-		Averages the values and returns them
-		
 	test_output(input_dict)
 		Calculates the output of the test network
 		
 	Rest of the methods are the same
 	"""
-	def __init__(self, neural_network, evaluation_steps=100, population_size=100,
+	def __init__(self, neural_network, population_size=100,
 				 number_of_generations=10, mutation_probability=0.01,
 				 number_of_elites=0):
 				 
@@ -79,51 +65,19 @@ class GeneticAlgorithmGazebo(GeneticAlgorithmNN):
 		------
 		None
 		"""
-		self.evaluation_steps = evaluation_steps
-		
 		# Initialize the Parent Class
 		GeneticAlgorithmNN.__init__(self, neural_network, population_size,
 									number_of_generations, mutation_probability,
 									number_of_elites)
 									
-		self._test_network = [None] * 5
+		self._test_network = None
 									
-	def calculate_fitness(self, index):
-		"""
-		Takes the chromosome and generates it's
-		fitness for one time step
-		"""
-		# Fitness calculated according to
-		# fitness function
-		fitness = self.fitness_function(index)
-			
-		# Return the value
-		return fitness
-		
-	def determine_fitness(self, individual_fitness, chromosome):
-		"""
-		Takes the fitness values for evaluation time steps
-		Averages the values and returns them
-		"""
-		# Average the fitness
-		fitness = np.sum(individual_fitness) / self.evaluation_steps
-		
-		# Determine the best fitness
-		# And when it occured the first time
-		if(fitness != self.best_fitness):
-			self.best_fitness = max(self.best_fitness, fitness)
-			if(fitness == self.best_fitness):
-				self.best_chromosome = chromosome
-				self.best_generation = self.current_generation
-		
-		return fitness
-			
-	def test_output(self, input_dict, index):
+	def test_output(self, input_dict):
 		"""
 		Function used to work with test network
 		It calculates the output for a given input_dict
 		"""
-		output = self.test_network[index].forward_propagate(input_dict)
+		output = self.test_network.forward_propagate(input_dict)
 		
 		return output
 			
@@ -137,27 +91,7 @@ class GeneticAlgorithmGazebo(GeneticAlgorithmNN):
 		
 	@test_network.setter
 	def test_network(self, individual):
-		try:
-			index, individual = individual
-		except ValueError:
-			raise ValueError("Pass individual and index")
-			
 		ready_individual = self.convert_chromosome(individual)
 		self.neural_network.load_parameters_from_vector(ready_individual)
-		self._test_network[index] = deepcopy(self.neural_network)
-		
-	@property
-	def evaluation_steps(self):
-		""" 
-		The number of time steps for which
-		the fitness function should be evaluated
-		"""
-		return self._evaluation_steps
-		
-	@evaluation_steps.setter
-	def evaluation_steps(self, steps):
-		if(steps <= 0):
-			steps = 100
-			
-		self._evaluation_steps = steps
+		self._test_network = self.neural_network
 	

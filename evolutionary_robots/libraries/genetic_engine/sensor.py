@@ -164,9 +164,9 @@ class Sensor(object):
 			distance = 0
 		
 		if(distance <= self.sensor_range):
-			return distance
+			return 1 - distance
 		else:
-			return self.sensor_range
+			return 1 - self.sensor_range
 		
 	@property
 	def position(self):

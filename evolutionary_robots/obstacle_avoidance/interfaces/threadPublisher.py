@@ -19,33 +19,28 @@
 #
 import threading
 import time
-import rospy
 from datetime import datetime
 
-time_cycle = 20
+time_cycle = 80
 
 
 class ThreadPublisher(threading.Thread):
 
-    def __init__(self, pub, kill_event, clock):
+    def __init__(self, pub, kill_event):
         self.pub = pub
         self.kill_event = kill_event
         threading.Thread.__init__(self, args=kill_event)
-        self.clock = clock
 
     def run(self):
         while (not self.kill_event.is_set()):
-            start_time = self.clock.getTimeData()
+            start_time = datetime.now()
 
-            try:
-                self.pub.publish()
-            except rospy.ROSException:
-                pass
+            self.pub.publish()
 
-            finish_Time = self.clock.getTimeData()
+            finish_Time = datetime.now()
 
             dt = finish_Time - start_time
-            ms = dt
+            ms = (dt.days * 24 * 60 * 60 + dt.seconds) * 1000 + dt.microseconds / 1000.0
             #print (ms)
             if (ms < time_cycle):
                 time.sleep((time_cycle - ms) / 1000.0)
